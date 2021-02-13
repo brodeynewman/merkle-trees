@@ -31,28 +31,36 @@ const createTree = (leaves) => {
 
 class MerkleTree {
   constructor(leaves) {
-    this.root = createTree(leaves);
+    this.tree = createTree(leaves);
   }
 
-  isVerified(node) {
+  get root() {
+    return this.tree[0][0];
+  }
+
+  getProof(leaf) {
+    const shouldGenerateProof = true;
+
+    const [, proof] = this.verify(leaf, shouldGenerateProof);
+
+    return proof;
+  }
+
+  verify(node, generateProof) {
     let { hash } = new Transaction(node);
 
-    const genesis = this.root[this.root.length - 1];
+    const genesis = this.tree[this.tree.length - 1];
     let position = _.findIndex(genesis, (gen) => gen.hash === hash);
 
+    const proof = [];
+
     // no matching hash found from genesis list
-    if (!position) {
+    if (position < 0) {
       return false;
     }
 
-    console.log('starting here', this.root, position, hash);
-
-    for (let i = this.root.length - 2; i > 0; i -= 1) {
-      console.log('curr', this.root[i]);
-
-      if (hash !== this.root[i][position]) {
-        console.log('BROKEN MOTHAFUCKA');
-
+    for (let i = this.tree.length - 2; i > 0; i -= 1) {
+      if (hash !== this.tree[i][position]) {
         return false;
       }
 
@@ -60,17 +68,42 @@ class MerkleTree {
 
       if (position % 2 === 0) {
         // binary -- so we're getting very next child
-        neighbor = this.root[i][i + 1];
+        neighbor = this.tree[i][position + 1];
         position = Math.floor(position / 2);
 
         // I want to let the transaction class handle all of the hashing
         const transaction = new Transaction(hash + neighbor);
 
+        if (generateProof) {
+          proof.push({
+            data: hash,
+            position: 'left',
+          });
+        }
+
         hash = transaction.hash;
       } else {
-        // neighbor = 
+        neighbor = this.tree[i][position - 1];
+        position = Math.floor((position - 1) / 2);
+
+        const transaction = new Transaction(neighbor + hash);
+
+        if (generateProof) {
+          proof.push({
+            data: hash,
+            position: 'right',
+          });
+        }
+
+        hash = transaction.hash;
       }
     }
+
+    const [topNode] = this.tree[0];
+
+    const isValid = hash === topNode;
+
+    return generateProof ? [isValid, proof] : isValid;
   }
 }
 
