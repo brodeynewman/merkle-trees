@@ -35,10 +35,6 @@ class MerkleTree {
     this.tree = createTree(leaves);
   }
 
-  get root() {
-    return this.tree[0][0];
-  }
-
   verify(node) {
     let { hash } = new Transaction(node);
 
