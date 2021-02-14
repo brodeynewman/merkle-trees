@@ -8,14 +8,21 @@ import (
 	"encoding/hex"
 )
 
+// Transaction class.
+// Used to store merkle tree transaction value + hash.
 type Transaction struct {
 	value string
 	hash string
 }
 
 func (t *Transaction) getHash() {
+	// Create our sha256
 	h := sha256.New()
+
+	// write byte value to sha
 	h.Write([]byte(t.value))
+
+	// hex encode our hash
 	hash := hex.EncodeToString(h.Sum(nil))
 
 	t.hash = hash
@@ -29,6 +36,8 @@ func newTransaction(v string) Transaction {
 	return t
 }
 
+// Merkle tree structure that holds genesis nodes (beginning leaves)...
+// as well as the hash tree
 type MerkleTree struct {
 	genesis []Transaction
 	tree [][]string

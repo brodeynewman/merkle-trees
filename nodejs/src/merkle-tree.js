@@ -85,10 +85,8 @@ class MerkleTree {
       }
     }
 
-    const [topNode] = this.tree[0];
-
     // once climbing finishes, compare our final hash with parent node hash
-    return hash === topNode;
+    return hash === this.tree[0][0];
   }
 }
 
