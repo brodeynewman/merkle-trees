@@ -34,7 +34,26 @@ type MerkleTree struct {
 }
 
 func (t *MerkleTree) verify(l string) bool {
-	
+	var pos int = -1
+
+	var hash string = newTransaction(l).hash
+
+	for i := 0; i < len(t.genesis); i++ {
+		// if hashes match, record position
+		if (t.genesis[i].hash == hash) {
+			pos = i
+		}
+	}
+
+	// if position in genesis does not exist, exit with false
+	if pos < 0 {
+		return false;
+	}
+
+	// otherwise, search through tree to ensure tx history exists
+	// ...
+
+	return true
 }
 
 func (t *MerkleTree) build(l []string) {
@@ -95,5 +114,7 @@ func main() {
 
 	merkle := newTree(leaves)
 
-	fmt.Println("FINAL HASHES", merkle.tree)
+	verified := merkle.verify("c")
+
+	fmt.Println("is verified?", verified)
 }
