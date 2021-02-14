@@ -51,10 +51,8 @@ func (t *MerkleTree) verify(l string) bool {
 		return false;
 	}
 
-	// otherwise, search through tree to ensure tx history exists
+	// start at the bottom of our tree and work our way up
 	for i := len(t.tree) - 1; i > 0; i-- {
-		var n string
-
 		// if new position is at the end of the tree. Ex: pos = 2 and t.tree[i] = [h, h, h]
 		if (pos % 2 == 0 && pos == len(t.tree[i]) - 1) {
 			// keep same hash since there is no neighbor
@@ -65,7 +63,7 @@ func (t *MerkleTree) verify(l string) bool {
 			
 			// if position is 0, get neighbor to the right
 		} else if (pos % 2 == 0) {
-			n = t.tree[i][pos + 1]
+			n := t.tree[i][pos + 1]
 			h := buildhashFromTransaction(hash, n)
 
 			pos = int(math.Floor(float64(pos / 2)))
@@ -74,7 +72,7 @@ func (t *MerkleTree) verify(l string) bool {
 
 			// if position is odd, get neighbor to the left
 		} else {
-			n = t.tree[i][pos - 1]
+			n := t.tree[i][pos - 1]
 			h := buildhashFromTransaction(n, hash)
 
 			pos = int(math.Floor(float64((pos - 1)) / 2))

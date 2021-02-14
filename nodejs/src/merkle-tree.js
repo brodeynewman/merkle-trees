@@ -7,6 +7,7 @@ const createTree = (leaves) => {
 
   const tree = [hashes, transactions];
 
+  // while there are still node pairs to hash together
   while (tree[0].length > 1) {
     const temp = [];
 
@@ -38,62 +39,51 @@ class MerkleTree {
     return this.tree[0][0];
   }
 
-  getProof(leaf) {
-    const shouldGenerateProof = true;
-
-    const [, proof] = this.verify(leaf, shouldGenerateProof);
-
-    return proof;
-  }
-
-  verify(node, generateProof) {
+  verify(node) {
     let { hash } = new Transaction(node);
 
     const genesis = this.tree[this.tree.length - 1];
     let position = _.findIndex(genesis, (gen) => gen.hash === hash);
-
-    const proof = [];
 
     // no matching hash found from genesis list
     if (position < 0) {
       return false;
     }
 
+    // start at the bottom of the tree and work our way up
     for (let i = this.tree.length - 2; i > 0; i -= 1) {
       if (hash !== this.tree[i][position]) {
         return false;
       }
 
-      let neighbor;
-
-      if (position % 2 === 0) {
-        // binary -- so we're getting very next child
-        neighbor = this.tree[i][position + 1];
+      // if the current position is even && it's the last item in the tree
+      if (position % 2 === 0 && position === (this.tree[i].length - 1)) {
+        // keep our hash the same since pointer simply moves up.
+        // Ex: pos === 2, this.tree[i] === [h, h, h].
+        //     our hash (index 2) in this case just moves up since there is no neighbor
+        hash = this.tree[i][position];
         position = Math.floor(position / 2);
 
-        // I want to let the transaction class handle all of the hashing
+        // if our position is even (left)
+      } else if (position % 2 === 0) {
+        // grab our neighbor to the right.
+        const neighbor = this.tree[i][position + 1];
+
+        // recalc position
+        position = Math.floor(position / 2);
+
+        // generate the hash for our neighbor + current hash
         const transaction = new Transaction(hash + neighbor);
 
-        if (generateProof) {
-          proof.push({
-            data: hash,
-            position: 'left',
-          });
-        }
-
         hash = transaction.hash;
+
+        // if our position is odd (right)
       } else {
-        neighbor = this.tree[i][position - 1];
+        // grab the neighbor to the left
+        const neighbor = this.tree[i][position - 1];
         position = Math.floor((position - 1) / 2);
 
         const transaction = new Transaction(neighbor + hash);
-
-        if (generateProof) {
-          proof.push({
-            data: hash,
-            position: 'right',
-          });
-        }
 
         hash = transaction.hash;
       }
@@ -101,9 +91,8 @@ class MerkleTree {
 
     const [topNode] = this.tree[0];
 
-    const isValid = hash === topNode;
-
-    return generateProof ? [isValid, proof] : isValid;
+    // once climbing finishes, compare our final hash with parent node hash
+    return hash === topNode;
   }
 }
 
