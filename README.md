@@ -30,7 +30,7 @@ To do this, you:
 
 1. Find the position + hash value in the tree.
 
-2. From there, you find the node's neighbor hash value and hash them together.
+2. From there, you find the node's neighbor's hash value and hash them together.
 
 3. You store this hash value for future comparison.
 
