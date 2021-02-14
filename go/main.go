@@ -2,7 +2,9 @@ package main
 
 import (
 	"fmt"
-	// "crypto/sha256"
+	"strings"
+	"crypto/sha256"
+	"encoding/hex"
 )
 
 type Transaction struct {
@@ -11,54 +13,87 @@ type Transaction struct {
 }
 
 func (t *Transaction) getHash() {
-	// t.hash = 
+	h := sha256.New()
+	h.Write([]byte(t.value))
+	hash := hex.EncodeToString(h.Sum(nil))
+
+	t.hash = hash
+}
+
+func newTransaction(v string) Transaction {
+	t := Transaction{}
+	t.value = v
+	t.getHash()
+
+	return t
 }
 
 type MerkleTree struct {
-	tree []Transaction
+	genesis []Transaction
+	tree [][]string
 }
 
-func (t *MerkleTree) verify(l string) {
+func (t *MerkleTree) verify(l string) bool {
 	
 }
 
-func (t *MerkleTree) New(l []string) {
-	transactions := []Transaction{}
-	// t.tree = []Transaction{Transaction{1, "hello"}}
+func (t *MerkleTree) build(l []string) {
+	t.genesis = []Transaction{}
 
+	// create genesis records from leaf nodes
 	for _, v := range l {
-		t := new(Transaction)
+		// create transactions for every leaf
+		ts := newTransaction(v)
 
-		transaction := t.New(v)
-
-		fmt.Println(transaction)
-
-		// transactions = append(transactions, transaction)
+		// append it to merkle 'tree'
+		t.genesis = append(t.genesis, ts)
 	}
 
-	t.tree = transactions;
+	h := []string{}
+
+	// create hashes from genesis records
+	for i := 0; i < len(t.genesis); i ++ {
+		h = append(h, t.genesis[i].hash)
+	}
+
+	t.tree = append(t.tree, h)
+
+	// loop through current branch in tree
+	for len(t.tree[0]) > 1 {
+		nodes := []string{}
+
+		for i := 0; i < len(t.tree[0]); i += 2 {
+			// even # of hashes
+			if (i % 2 == 0 && i < len(t.tree[0]) - 1) {
+				var sb strings.Builder
+
+				sb.WriteString(t.tree[0][i])
+				sb.WriteString(t.tree[0][i + 1])
+
+				nt := newTransaction(sb.String())
+
+				nodes = append(nodes, nt.hash)
+			} else {
+				// if odd # of hashes, repeat last hash # in tree
+				nodes = append(nodes, t.tree[0][i])
+			}
+		}
+
+		t.tree = append([][]string{nodes}, t.tree...)
+	}
 }
 
-func (t *Transaction) New(v string) *Transaction {
-	transaction := Transaction{}
+func newTree(l []string) *MerkleTree {
+	merkle := MerkleTree{}
+	merkle.build(l)
 
-	// transaction.hash()
-
-	return &transaction
-}
-
-func createTree(l []string) *MerkleTree {
-	tree := new(MerkleTree)
-
-	tree.New(l)
-
-	return tree
+	return &merkle
 }
 
 func main() {
 	leaves := []string{"a", "b", "c", "d"}
 
-	tree := createTree(leaves)
+	merkle := newTree(leaves)
 
-	fmt.Println("FINAL", tree)
+	fmt.Println("FINAL HASHES", merkle.tree)
 }
