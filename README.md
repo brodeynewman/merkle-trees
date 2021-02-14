@@ -24,7 +24,7 @@ Instead of hashing the node twice, the odd node in the tree is simply moved abov
 
 When using Merkle Trees, often times you want to verify transactions actually exist in the tree.
 
-In the example above, we wish to verify transaction `HL` and index `11`.
+In the example above, we wish to verify transaction `HL` at index `11`.
 
 To do this, you:
 
