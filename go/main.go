@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"math"
 	"strings"
 	"crypto/sha256"
 	"encoding/hex"
@@ -51,9 +52,38 @@ func (t *MerkleTree) verify(l string) bool {
 	}
 
 	// otherwise, search through tree to ensure tx history exists
-	// ...
+	for i := len(t.tree) - 1; i > 0; i-- {
+		var n string
 
-	return true
+		// if new position is at the end of the tree. Ex: pos = 2 and t.tree[i] = [h, h, h]
+		if (pos % 2 == 0 && pos == len(t.tree[i]) - 1) {
+			// keep same hash since there is no neighbor
+			hash = t.tree[i][pos]
+
+			// recalc position
+			pos = int(math.Floor(float64(pos / 2)))
+			
+			// if position is 0, get neighbor to the right
+		} else if (pos % 2 == 0) {
+			n = t.tree[i][pos + 1]
+			h := buildhashFromTransaction(hash, n)
+
+			pos = int(math.Floor(float64(pos / 2)))
+
+			hash = h
+
+			// if position is odd, get neighbor to the left
+		} else {
+			n = t.tree[i][pos - 1]
+			h := buildhashFromTransaction(n, hash)
+
+			pos = int(math.Floor(float64((pos - 1)) / 2))
+			hash = h
+		}
+	}
+
+	// once climbing is done, compare final hash with root hash
+	return hash == t.tree[0][0]
 }
 
 func (t *MerkleTree) build(l []string) {
@@ -77,29 +107,36 @@ func (t *MerkleTree) build(l []string) {
 
 	t.tree = append(t.tree, h)
 
-	// loop through current branch in tree
+	// loop through current branch in tree while tree[0] has nodes to hash together
 	for len(t.tree[0]) > 1 {
 		nodes := []string{}
 
 		for i := 0; i < len(t.tree[0]); i += 2 {
 			// even # of hashes
 			if (i % 2 == 0 && i < len(t.tree[0]) - 1) {
-				var sb strings.Builder
+				hash := buildhashFromTransaction(t.tree[0][i], t.tree[0][i + 1])
 
-				sb.WriteString(t.tree[0][i])
-				sb.WriteString(t.tree[0][i + 1])
-
-				nt := newTransaction(sb.String())
-
-				nodes = append(nodes, nt.hash)
+				nodes = append(nodes, hash)
 			} else {
 				// if odd # of hashes, repeat last hash # in tree
 				nodes = append(nodes, t.tree[0][i])
 			}
 		}
 
+		// prepend the tree with the newly created list of hashes
 		t.tree = append([][]string{nodes}, t.tree...)
 	}
+}
+
+func buildhashFromTransaction(a string, b string) string {
+	var sb strings.Builder
+
+	sb.WriteString(a)
+	sb.WriteString(b)
+
+	nt := newTransaction(sb.String())
+
+	return nt.hash
 }
 
 func newTree(l []string) *MerkleTree {
@@ -110,11 +147,12 @@ func newTree(l []string) *MerkleTree {
 }
 
 func main() {
-	leaves := []string{"a", "b", "c", "d"}
+	leaves := []string{"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k"}
 
 	merkle := newTree(leaves)
 
-	verified := merkle.verify("c")
-
-	fmt.Println("is verified?", verified)
+	fmt.Println(merkle.verify("e")) // true
+	fmt.Println(merkle.verify("a")) // true
+	fmt.Println(merkle.verify("z")) // false
+	fmt.Println(merkle.verify("j")) // true
 }

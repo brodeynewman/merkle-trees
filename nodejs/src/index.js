@@ -1,8 +1,8 @@
 import MerkleTree from './merkle-tree.js';
 
-const tree = new MerkleTree(['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k']);
+const tree = new MerkleTree(['a', 'b', 'c']);
 
-console.log('Verified?', tree.verify('a')); // true
+console.log('Verified?', tree.verify('c')); // true
 console.log('Verified?', tree.verify('A')); // false
 
 console.log('Root: ', tree.root); // false
